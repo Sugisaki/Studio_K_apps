@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GPXビューア</title>
+    <!-- Bootstrap CSS -->
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <!-- Leaflet CSS -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        #map {
+            height: 500px;
+            width: 100%;
+            border-radius: 8px;
+            border: 1px solid #dee2e6;
+        }
+        .statistics-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+        .leaflet-div-icon {
+            background: transparent;
+            border: none;
+        }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-md-10">
+            <div class="card">
+                <div class="card-header">
+                    <h4 class="mb-0">GPXビューア (ブラウザ表示)</h4>
+                </div>
+                <div class="card-body">
+                    <div class="mb-3">
+                        <label for="gpx-file" class="form-label">GPXファイルを選択してください</label>
+                        <input class="form-control" type="file" id="gpx-file" accept=".gpx">
+                        <small class="text-muted">
+                            ここで選択したGPXファイルはサーバーにアップロードされません。<br>
+                            ファイルはご使用のブラウザ内でのみ読み込まれ、地図に軌跡が表示されます。
+                        </small>
+                    </div>
+                    <hr>
+
+                    <div id="gpx-info" style="display: none;">
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>タイトル:</strong>
+                            </div>
+                            <div class="col-md-9" id="gpx-title"></div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>ファイル名:</strong>
+                            </div>
+                            <div class="col-md-9" id="gpx-filename"></div>
+                        </div>
+                        <hr>
+
+                        <div class="row">
+                            <div class="col-md-3">
+                                <strong>ファイルサイズ:</strong>
+                            </div>
+                            <div class="col-md-9" id="gpx-filesize"></div>
+                        </div>
+                        <hr>
+
+                        <!-- トラック統計情報 -->
+                        <div id="track-stats-card" class="statistics-card" style="display: none;">
+                            <h6 class="mb-3"><strong>🚶 トラック統計（実際の軌跡）</strong></h6>
+                            <div class="stat-item">
+                                <span>総距離:</span>
+                                <span id="track-distance"><strong>0 km</strong></span>
+                            </div>
+                            <div class="stat-item" id="track-gain-item">
+                                <span>累積上昇:</span>
+                                <span id="track-gain"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="track-loss-item">
+                                <span>累積下降:</span>
+                                <span id="track-loss"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="track-min-ele-item">
+                                <span>最低標高:</span>
+                                <span id="track-min-ele"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="track-max-ele-item">
+                                <span>最高標高:</span>
+                                <span id="track-max-ele"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item">
+                                <span>軌跡ポイント数:</span>
+                                <span id="track-points"><strong>0 点</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- ルート統計情報 -->
+                        <div id="route-stats-card" class="statistics-card" style="display: none;">
+                            <h6 class="mb-3"><strong>🗺️ ルート統計（計画されたルート）</strong></h6>
+                            <div class="stat-item">
+                                <span>総距離:</span>
+                                <span id="route-distance"><strong>0 km</strong></span>
+                            </div>
+                            <div class="stat-item" id="route-gain-item">
+                                <span>累積上昇:</span>
+                                <span id="route-gain"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="route-loss-item">
+                                <span>累積下降:</span>
+                                <span id="route-loss"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="route-min-ele-item">
+                                <span>最低標高:</span>
+                                <span id="route-min-ele"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item" id="route-max-ele-item">
+                                <span>最高標高:</span>
+                                <span id="route-max-ele"><strong>0 m</strong></span>
+                            </div>
+                            <div class="stat-item">
+                                <span>ルートポイント数:</span>
+                                <span id="route-points"><strong>0 点</strong></span>
+                            </div>
+                        </div>
+
+                        <!-- 地図表示 -->
+                        <div class="row">
+                            <div class="col-12">
+                                <h6><strong>GPXマップ</strong></h6>
+                                <div id="map-legend" class="mb-2" style="display: none;"></div>
+                                <div id="map"></div>
+                            </div>
+                        </div>
+
+                        <!-- グラフ表示 -->
+                        <div id="chart-container" class="mt-4" style="display: none;">
+                            <h6 id="chart-title"><strong>分析グラフ</strong></h6>
+                            <div class="mb-2">
+                                <div class="form-check form-check-inline" id="chart-elevation-option" style="display: none;">
+                                    <input class="form-check-input" type="radio" name="chart-axis" id="chart-elevation" value="elevation">
+                                    <label class="form-check-label" for="chart-elevation">標高</label>
+                                </div>
+                                <div class="form-check form-check-inline" id="chart-speed-option" style="display: none;">
+                                    <input class="form-check-input" type="radio" name="chart-axis" id="chart-speed" value="speed">
+                                    <label class="form-check-label" for="chart-speed">速度</label>
+                                </div>
+                            </div>
+                            <canvas id="gpx-chart"></canvas>
+                        </div>
+                    </div>
+                    <div id="gpx-warning" class="alert alert-warning mt-3" style="display: none;">
+                        GPXファイルのデータを読み込めませんでした。ファイルが破損しているか、対応していない形式の可能性があります。
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- JavaScript Libraries -->
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chartjs-adapter-date-fns/dist/chartjs-adapter-date-fns.bundle.min.js"></script>
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+<!-- Main GPX Viewer Logic -->
+<script>
+document.addEventListener('DOMContentLoaded', function () {
+    const map = L.map('map');
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+        attribution: '© <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
+    }).addTo(map);
+
+    let gpxLayerGroup = null;
+    let gpxChart = null;
+    let syncMarker = null;
+    let chartDataCache = {};
+
+    document.getElementById('gpx-file').addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // --- Reset UI ---
+        if (gpxLayerGroup) map.removeLayer(gpxLayerGroup);
+        if (syncMarker) map.removeLayer(syncMarker);
+        if (gpxChart) gpxChart.destroy();
+        gpxLayerGroup = L.layerGroup().addTo(map);
+        syncMarker = null;
+        gpxChart = null;
+        chartDataCache = {};
+
+        document.getElementById('gpx-info').style.display = 'none';
+        document.getElementById('gpx-warning').style.display = 'none';
+        document.getElementById('track-stats-card').style.display = 'none';
+        document.getElementById('route-stats-card').style.display = 'none';
+        document.getElementById('map-legend').style.display = 'none';
+        document.getElementById('chart-container').style.display = 'none';
+        document.getElementById('chart-speed-option').style.display = 'none';
+        document.getElementById('chart-elevation-option').style.display = 'none';
+
+        ['track', 'route'].forEach(type => {
+            ['gain', 'loss', 'min-ele', 'max-ele'].forEach(item => {
+                const el = document.getElementById(`${type}-${item}-item`);
+                if (el) el.style.display = 'none';
+            });
+        });
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const parser = new DOMParser();
+                const xmlDoc = parser.parseFromString(e.target.result, "text/xml");
+                if (xmlDoc.getElementsByTagName("parsererror").length) throw new Error("Failed to parse XML.");
+
+                const metadata = xmlDoc.querySelector("metadata");
+                const gpxName = metadata?.querySelector("name")?.textContent || file.name.replace(/\.gpx$/i, '');
+
+                document.getElementById('gpx-title').textContent = gpxName;
+                document.getElementById('gpx-filename').textContent = file.name;
+                document.getElementById('gpx-filesize').textContent = `${(file.size / 1024).toFixed(2)} KB`;
+
+                const gpxData = parseGpx(xmlDoc);
+                if (gpxData.trackPoints.length === 0 && gpxData.routePoints.length === 0) throw new Error("No track or route points found.");
+
+                document.getElementById('gpx-info').style.display = 'block';
+
+                if (gpxData.trackPoints.length > 0) {
+                    const stats = calculateStatistics(gpxData.trackPoints);
+                    displayStatistics('track', stats, gpxData.trackPoints.length);
+                }
+                if (gpxData.routePoints.length > 0) {
+                    const stats = calculateStatistics(gpxData.routePoints);
+                    displayStatistics('route', stats, gpxData.routePoints.length);
+                }
+
+                drawGpxOnMap(gpxData, gpxName);
+
+                // --- Chart ---
+                chartDataCache = prepareChartData(gpxData);
+
+                document.getElementById('chart-title').textContent = `分析グラフ (横軸: ${chartDataCache.chartType === 'time' ? '時間' : '距離'})`;
+
+                if (chartDataCache.chartType !== 'none') {
+                    document.getElementById('chart-container').style.display = 'block';
+                    let firstChoice = '';
+
+                    if (chartDataCache.chartType === 'distance') {
+                        // 距離ベースの場合は標高のみ表示
+                        document.getElementById('chart-elevation-option').style.display = 'inline-block';
+                        document.querySelector('label[for="chart-elevation"]').textContent = '標高';
+                        document.getElementById('chart-speed-option').style.display = 'none';
+                        firstChoice = 'elevation';
+                    } else {
+                        // 時間ベースの場合
+                        document.querySelector('label[for="chart-elevation"]').textContent = '標高';
+                        if (chartDataCache.elevation.length > 0) {
+                            document.getElementById('chart-elevation-option').style.display = 'inline-block';
+                            firstChoice = 'elevation';
+                        }
+                        if (chartDataCache.speed.length > 0) {
+                            document.getElementById('chart-speed-option').style.display = 'inline-block';
+                            if (!firstChoice) firstChoice = 'speed';
+                        }
+                    }
+
+                    if(firstChoice) {
+                        document.getElementById(`chart-${firstChoice}`).checked = true;
+                        drawOrUpdateChart();
+                    }
+                } else {
+                    document.getElementById('chart-container').style.display = 'none';
+                }
+
+            } catch (error) {
+                console.error('GPX processing error:', error);
+                document.getElementById('gpx-warning').style.display = 'block';
+            }
+        };
+        reader.onerror = () => alert('ファイルの読み込みに失敗しました。');
+        reader.readAsText(file);
+    });
+
+    document.querySelectorAll('input[name="chart-axis"]').forEach(radio => {
+        radio.addEventListener('change', () => drawOrUpdateChart());
+    });
+
+    function parseGpx(xmlDoc) {
+        const getVal = (node, selector) => node.querySelector(selector)?.textContent;
+        const getAttr = (node, attr) => node.getAttribute(attr);
+
+        const parsePoints = (query, hasTime) => Array.from(xmlDoc.querySelectorAll(query)).map(pt => ({
+            lat: parseFloat(getAttr(pt, "lat")),
+            lng: parseFloat(getAttr(pt, "lon")),
+            ele: getVal(pt, "ele") ? parseFloat(getVal(pt, "ele")) : null,
+            time: hasTime && getVal(pt, "time") ? new Date(getVal(pt, "time")) : null,
+            name: getVal(pt, "name"),
+            desc: getVal(pt, "desc"),
+        }));
+
+        return {
+            trackPoints: parsePoints("trkpt", true),
+            routePoints: parsePoints("rtept", false),
+            waypoints: parsePoints("wpt", false),
+        };
+    }
+
+    function haversineDistance(p1, p2) {
+        const R = 6371;
+        const dLat = (p2.lat - p1.lat) * Math.PI / 180;
+        const dLon = (p2.lng - p1.lng) * Math.PI / 180;
+        const a = Math.sin(dLat/2) ** 2 + Math.cos(p1.lat * Math.PI / 180) * Math.cos(p2.lat * Math.PI / 180) * Math.sin(dLon/2) ** 2;
+        return R * (2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a)));
+    }
+
+    function calculateStatistics(points) {
+        let totalDistance = 0, elevationGain = 0, elevationLoss = 0;
+        let minElevation = Infinity, maxElevation = -Infinity;
+        const hasElevation = points.some(p => p.ele !== null);
+
+        for (let i = 0; i < points.length; i++) {
+            if (points[i].ele !== null) {
+                minElevation = Math.min(minElevation, points[i].ele);
+                maxElevation = Math.max(maxElevation, points[i].ele);
+            }
+            if (i > 0) {
+                totalDistance += haversineDistance(points[i-1], points[i]);
+                if (points[i].ele !== null && points[i-1].ele !== null) {
+                    const diff = points[i].ele - points[i-1].ele;
+                    if (diff > 0) elevationGain += diff; else elevationLoss -= diff;
+                }
+            }
+        }
+        return {
+            totalDistance: totalDistance.toFixed(2),
+            elevationGain: hasElevation ? Math.round(elevationGain) : null,
+            elevationLoss: hasElevation ? Math.round(elevationLoss) : null,
+            minElevation: hasElevation ? Math.round(minElevation) : null,
+            maxElevation: hasElevation ? Math.round(maxElevation) : null,
+        };
+    }
+
+    function displayStatistics(type, stats, pointsCount) {
+        document.getElementById(`${type}-stats-card`).style.display = 'block';
+        document.getElementById(`${type}-distance`).innerHTML = `<strong>${stats.totalDistance} km</strong>`;
+        document.getElementById(`${type}-points`).innerHTML = `<strong>${pointsCount.toLocaleString()} 点</strong>`;
+
+        if (stats.elevationGain !== null) {
+            const gainItem = document.getElementById(`${type}-gain-item`);
+            gainItem.style.display = 'flex';
+            document.getElementById(`${type}-gain`).innerHTML = `<strong>${stats.elevationGain} m</strong>`;
+            const lossItem = document.getElementById(`${type}-loss-item`);
+            lossItem.style.display = 'flex';
+            document.getElementById(`${type}-loss`).innerHTML = `<strong>${stats.elevationLoss} m</strong>`;
+        }
+        if (stats.minElevation !== null) {
+            const minEleItem = document.getElementById(`${type}-min-ele-item`);
+            minEleItem.style.display = 'flex';
+            document.getElementById(`${type}-min-ele`).innerHTML = `<strong>${stats.minElevation} m</strong>`;
+            const maxEleItem = document.getElementById(`${type}-max-ele-item`);
+            maxEleItem.style.display = 'flex';
+            document.getElementById(`${type}-max-ele`).innerHTML = `<strong>${stats.maxElevation} m</strong>`;
+        }
+    }
+
+    function drawGpxOnMap(gpxData, gpxName) {
+        const { trackPoints, routePoints, waypoints } = gpxData;
+        let allLatLngs = [];
+        let legendHtml = '';
+
+        const createMarker = (lat, lng, html, title) => L.marker([lat, lng], { icon: L.divIcon({ html, className: 'leaflet-div-icon', iconSize: [22, 22] }) }).addTo(gpxLayerGroup).bindPopup(title);
+
+        if (trackPoints.length > 0) {
+            const latLngs = trackPoints.map(p => [p.lat, p.lng]);
+            allLatLngs.push(...latLngs);
+            const line = L.polyline(latLngs, { color: '#e74c3c', weight: 3, opacity: 0.8 }).addTo(gpxLayerGroup);
+            line.on('mouseover', function() { this.setStyle({ weight: 5, opacity: 1.0 }); });
+            line.on('mouseout', function() { this.setStyle({ weight: 3, opacity: 0.8 }); });
+            line.bindPopup(`<strong>${gpxName}</strong><br>🚶 トラック`);
+            createMarker(latLngs[0][0], latLngs[0][1], '<div style="background-color: #27ae60; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">TS</div>', 'トラック開始地点');
+            if (latLngs.length > 1) createMarker(latLngs[latLngs.length - 1][0], latLngs[latLngs.length - 1][1], '<div style="background-color: #e74c3c; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">TG</div>', 'トラック終了地点');
+            legendHtml += '<span style="color: #e74c3c;">■</span> トラック ';
+        }
+
+        if (routePoints.length > 0) {
+            const latLngs = routePoints.map(p => [p.lat, p.lng]);
+            allLatLngs.push(...latLngs);
+            const line = L.polyline(latLngs, { color: '#3498db', weight: 3, opacity: 0.8, dashArray: '10, 5' }).addTo(gpxLayerGroup);
+            line.on('mouseover', function() { this.setStyle({ weight: 5, opacity: 1.0 }); });
+            line.on('mouseout', function() { this.setStyle({ weight: 3, opacity: 0.8 }); });
+            line.bindPopup(`<strong>${gpxName}</strong><br>🗺️ ルート`);
+            createMarker(latLngs[0][0], latLngs[0][1], '<div style="background-color: #2980b9; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">RS</div>', 'ルート開始地点');
+            if (latLngs.length > 1) createMarker(latLngs[latLngs.length - 1][0], latLngs[latLngs.length - 1][1], '<div style="background-color: #3498db; color: white; border-radius: 50%; width: 22px; height: 22px; display: flex; align-items: center; justify-content: center; font-size: 12px; font-weight: bold;">RG</div>', 'ルート終了地点');
+            legendHtml += '<span style="color: #3498db;">■</span> ルート ';
+        }
+
+        waypoints.forEach(wpt => {
+            createMarker(wpt.lat, wpt.lng, '<div style="background-color: #f39c12; color: white; border-radius: 50%; width: 16px; height: 16px; display: flex; align-items: center; justify-content: center; font-size: 10px; font-weight: bold;">W</div>', `<strong>${wpt.name || 'ウェイポイント'}</strong>` + (wpt.desc ? `<br>${wpt.desc}`: ''));
+        });
+
+        if (legendHtml) {
+            document.getElementById('map-legend').innerHTML = `<small class="text-muted">${legendHtml}</small>`;
+            document.getElementById('map-legend').style.display = 'block';
+        }
+
+        if (allLatLngs.length > 0) map.fitBounds(L.latLngBounds(allLatLngs), { padding: [20, 20] });
+        else map.setView([35.681236, 139.767125], 5);
+    }
+
+    function prepareChartData(gpxData) {
+        const hasTime = gpxData.trackPoints.some(p => p.time);
+        const hasElevation = gpxData.trackPoints.some(p => p.ele !== null);
+
+        if (!hasElevation || gpxData.trackPoints.length < 2) {
+            return { elevation: [], speed: [], trackPoints: gpxData.trackPoints, chartType: 'none' };
+        }
+
+        const median = (values) => {
+            if (values.length === 0) return null;
+            const sorted = [...values].sort((a, b) => a - b);
+            const half = Math.floor(sorted.length / 2);
+            return sorted.length % 2 ? sorted[half] : (sorted[half - 1] + sorted[half]) / 2.0;
+        };
+
+        if (hasTime) {
+            // --- 時刻データがある場合 (既存のロジックをベース) ---
+            const windowSize = 10 * 1000; // 10 seconds
+            const pointsWithOriginalIndex = gpxData.trackPoints
+                .map((p, i) => ({ point: p, originalIndex: i }))
+                .filter(item => item.point.time);
+
+            const aggregatedPoints = [];
+
+            for (let i = 0; i < pointsWithOriginalIndex.length; i++) {
+                const currentItem = pointsWithOriginalIndex[i];
+                const windowStartTime = currentItem.point.time.getTime() - windowSize;
+
+                const windowItems = [];
+                for (let j = i; j >= 0; j--) {
+                    if (pointsWithOriginalIndex[j].point.time.getTime() >= windowStartTime) {
+                        windowItems.unshift(pointsWithOriginalIndex[j]);
+                    } else {
+                        break;
+                    }
+                }
+
+                if (windowItems.length === 0) continue;
+
+                const elevations = windowItems.map(item => item.point.ele).filter(ele => ele !== null);
+                const medianElevation = median(elevations);
+
+                const speeds = [];
+                if (windowItems.length > 1) {
+                    for (let k = 1; k < windowItems.length; k++) {
+                        const p1 = windowItems[k - 1].point;
+                        const p2 = windowItems[k].point;
+                        if (p1.time && p2.time) {
+                            const distance = haversineDistance(p1, p2);
+                            const timeDiffHours = (p2.time.getTime() - p1.time.getTime()) / (1000 * 60 * 60);
+                            if (timeDiffHours > 0) speeds.push(distance / timeDiffHours);
+                        }
+                    }
+                }
+                const medianSpeed = median(speeds);
+
+                aggregatedPoints.push({
+                    time: currentItem.point.time.getTime(),
+                    speed: medianSpeed,
+                    elevation: medianElevation,
+                    originalIndex: currentItem.originalIndex
+                });
+            }
+
+            return {
+                speed: aggregatedPoints.filter(p => p.speed !== null).map(p => ({ x: p.time, y: p.speed, originalIndex: p.originalIndex })),
+                elevation: aggregatedPoints.filter(p => p.elevation !== null).map(p => ({ x: p.time, y: p.elevation, originalIndex: p.originalIndex })),
+                trackPoints: gpxData.trackPoints,
+                chartType: 'time'
+            };
+
+        } else {
+            // --- 時刻データがなく、標高データがある場合 ---
+            let cumulativeDistance = 0;
+            const pointsWithDistance = gpxData.trackPoints.map((p, i) => {
+                if (i > 0) {
+                    cumulativeDistance += haversineDistance(gpxData.trackPoints[i-1], p);
+                }
+                return { dist: cumulativeDistance * 1000, ele: p.ele, originalIndex: i }; // 距離をメートルに
+            });
+
+            const smoothedElevation = calculateMovingMedianByDistance(pointsWithDistance, 10);
+
+            const elevationData = pointsWithDistance.map((p, i) => ({
+                x: p.dist / 1000, // 表示用にkmに戻す
+                y: smoothedElevation[i],
+                originalIndex: p.originalIndex
+            }));
+
+            return {
+                elevation: elevationData,
+                speed: [],
+                trackPoints: gpxData.trackPoints,
+                chartType: 'distance'
+            };
+        }
+    }
+
+    function calculateMovingMedianByDistance(pointsWithDistance, windowSizeMeters) {
+        const smoothedElevations = [];
+        const halfWindow = windowSizeMeters / 2;
+
+        for (let i = 0; i < pointsWithDistance.length; i++) {
+            const currentDist = pointsWithDistance[i].dist;
+            const window = [];
+
+            // ウィンドウ内のポイントを集める
+            for (let j = 0; j < pointsWithDistance.length; j++) {
+                const pointDist = pointsWithDistance[j].dist;
+                if (pointDist >= currentDist - halfWindow && pointDist <= currentDist + halfWindow) {
+                    if (pointsWithDistance[j].ele !== null) {
+                        window.push(pointsWithDistance[j].ele);
+                    }
+                }
+            }
+
+            if (window.length === 0) {
+                smoothedElevations.push(pointsWithDistance[i].ele); // ウィンドウが空の場合は元の値
+                continue;
+            }
+
+            // 中央値を計算
+            window.sort((a, b) => a - b);
+            const mid = Math.floor(window.length / 2);
+            const median = window.length % 2 !== 0 ? window[mid] : (window[mid - 1] + window[mid]) / 2;
+            smoothedElevations.push(median);
+        }
+        return smoothedElevations;
+    }
+
+    function drawOrUpdateChart() {
+        const selectedDataType = document.querySelector('input[name="chart-axis"]:checked').value;
+        const data = chartDataCache[selectedDataType];
+        if (!data || data.length === 0) return;
+
+        const chartType = chartDataCache.chartType;
+        let label = '';
+        let color = '';
+        let xAxisLabel = '';
+        let xType = 'linear';
+        let tooltipTitleCallback = (context) => context[0].label;
+        let tooltipLabelCallback = (context) => `${context.dataset.label || ''}: ${context.parsed.y.toFixed(1)}`;
+
+        const elevationLabel = document.querySelector('label[for="chart-elevation"]');
+
+        if (chartType === 'time') {
+            label = selectedDataType === 'speed' ? '速度 (km/h)' : '標高 (m)';
+            color = selectedDataType === 'speed' ? 'rgba(231, 76, 60, 1.0)' : 'rgba(52, 152, 219, 1.0)';
+            xAxisLabel = '時間';
+            xType = 'time';
+            tooltipTitleCallback = (context) => (new Date(context[0].parsed.x)).toLocaleTimeString();
+            if (elevationLabel) elevationLabel.textContent = '標高';
+        } else if (chartType === 'distance') {
+            label = '標高';
+            color = 'rgba(52, 152, 219, 1.0)';
+            xAxisLabel = '距離 (km)';
+            xType = 'linear';
+            tooltipLabelCallback = (context) => `${context.dataset.label || ''}: ${context.parsed.y.toFixed(1)} m`;
+            tooltipTitleCallback = (context) => `距離: ${context[0].parsed.x.toFixed(2)} km`;
+            if (elevationLabel) elevationLabel.textContent = '標高';
+        }
+
+        if (gpxChart) {
+            gpxChart.data.datasets[0].data = data;
+            gpxChart.data.datasets[0].label = label;
+            gpxChart.data.datasets[0].borderColor = color;
+            gpxChart.options.scales.x.type = xType;
+            gpxChart.options.scales.x.title.text = xAxisLabel;
+            gpxChart.options.scales.y.title.text = label.split(' (')[0]; // (km/h)などを除く
+            gpxChart.options.plugins.tooltip.callbacks.title = tooltipTitleCallback;
+            gpxChart.options.plugins.tooltip.callbacks.label = tooltipLabelCallback;
+            if (xType === 'time') {
+                gpxChart.options.scales.x.time = { unit: 'minute', tooltipFormat: 'HH:mm:ss', displayFormats: { minute: 'HH:mm' } };
+            } else {
+                // 線形軸の場合はtime設定を削除
+                delete gpxChart.options.scales.x.time;
+            }
+            gpxChart.update();
+        } else {
+            const ctx = document.getElementById('gpx-chart').getContext('2d');
+            gpxChart = new Chart(ctx, {
+                type: 'line',
+                data: { datasets: [{ label, data, borderColor: color, borderWidth: 2, fill: false, pointRadius: 0, tension: 0.1 }] },
+                options: {
+                    parsing: { xAxisKey: 'x', yAxisKey: 'y' },
+                    scales: {
+                        x: {
+                            type: xType,
+                            title: { display: true, text: xAxisLabel },
+                            ...(xType === 'time' && { time: { unit: 'minute', tooltipFormat: 'HH:mm:ss', displayFormats: { minute: 'HH:mm' } } })
+                        },
+                        y: { title: { display: true, text: label.split(' (')[0] } }
+                    },
+                    onClick: (evt) => {
+                        const activePoints = gpxChart.getElementsAtEventForMode(evt, 'nearest', { intersect: false }, true);
+                        if (activePoints.length > 0) {
+                            const dataIndex = activePoints[0].index;
+                            const originalIndex = gpxChart.data.datasets[0].data[dataIndex].originalIndex;
+                            if (originalIndex === -1) return;
+
+                            const targetPoint = chartDataCache.trackPoints[originalIndex];
+                            if (targetPoint) {
+                                if (syncMarker) map.removeLayer(syncMarker);
+                                syncMarker = L.circleMarker([targetPoint.lat, targetPoint.lng], {
+                                    radius: 8, color: '#ff4500', fillColor: '#ff4500', fillOpacity: 0.8
+                                }).addTo(map);
+                                map.panTo([targetPoint.lat, targetPoint.lng]);
+                            }
+                        }
+                    },
+                    plugins: {
+                        tooltip: {
+                            callbacks: {
+                                title: tooltipTitleCallback,
+                                label: tooltipLabelCallback
+                            }
+                        },
+                        legend: {
+                            onClick: null
+                        }
+                    }
+                }
+            });
+        }
+    }
+});
+</script>
+
+</body>
+</html>

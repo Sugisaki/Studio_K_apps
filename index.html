@@ -5,54 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Studio K アプリケーション</title>
     <style>
+        body {
+            background-color: #f4f7f9;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+            margin: 0;
+            padding: 20px;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            text-align: center;
+            color: #333;
+            margin-bottom: 30px;
+        }
+        .group-card {
+            background-color: #ffffff;
+            border-radius: 12px;
+            padding: 25px;
+            margin-bottom: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+            border: 1px solid #e9ecef;
+        }
+        .group-card h2 {
+            margin-top: 0;
+            margin-bottom: 20px;
+            padding-bottom: 10px;
+            border-bottom: 1px solid #dee2e6;
+            color: #007bff;
+        }
         .app-icon {
-            width: 120px;
-            height: 120px;
-            vertical-align: middle;
-            margin-right: 15px;
+            width: 100px;
+            height: 100px;
+            margin-right: 20px;
+            border-radius: 12px;
         }
         .app-entry {
             display: flex;
             align-items: center;
             margin-bottom: 20px;
         }
+        .app-entry:last-child {
+            margin-bottom: 0;
+        }
         .app-info {
             flex: 1;
+        }
+        .app-info h3 {
+            margin-top: 0;
+            margin-bottom: 5px;
+        }
+        .app-info p {
+            margin-bottom: 0;
+            color: #6c757d;
+            font-size: 0.95em;
+        }
+        a {
+            text-decoration: none;
+            color: #0d6efd;
+        }
+        a:hover {
+            text-decoration: underline;
         }
     </style>
 </head>
 <body>
-    <h1>Studio K アプリケーション</h1>
+    <div class="container">
+        <h1>Studio K アプリケーション</h1>
 
-    <div class="app-entry">
-        <img src="https://play-lh.googleusercontent.com/2lwHw_dOInW0qkQVDB-TySWLW7NTH5SAf9qXgux_GV22pCqPZL_sIy5rJoKZNS_vVdY=w240-h480" alt="気候カレンダー アイコン" class="app-icon">
-        <div class="app-info">
-            <h2><a href="https://play.google.com/store/apps/details?id=com.studiokei.seasoncalendar&hl=ja">気候カレンダー（二十四節気七十二候）</a></h2>
-            <p>
-                二十四節気、七十二候、雑節とその説明をカレンダーから表示するアプリです。俳句の歳時記としてもご利用頂けます。
-            </p>
+        <div class="group-card">
+            <h2>Webアプリケーション</h2>
+            <div class="app-entry">
+                <img src="https://cdn-icons-png.flaticon.com/128/854/854878.png" alt="GPXビューア アイコン" class="app-icon">
+                <div class="app-info">
+                    <h3><a href="./gpx-viewer.html">GPXビューア</a></h3>
+                    <p>GPXファイルを地図上に表示し、標高や速度のグラフを確認できるツールです。</p>
+                </div>
+            </div>
+        </div>
+
+        <div class="group-card">
+            <h2>Androidアプリ</h2>
+            <div class="app-entry">
+                <img src="https://play-lh.googleusercontent.com/2lwHw_dOInW0qkQVDB-TySWLW7NTH5SAf9qXgux_GV22pCqPZL_sIy5rJoKZNS_vVdY=w240-h480" alt="気候カレンダー アイコン" class="app-icon">
+                <div class="app-info">
+                    <h3><a href="https://play.google.com/store/apps/details?id=com.studiokei.seasoncalendar&hl=ja" target="_blank" rel="noopener">気候カレンダー（二十四節気七十二候）</a></h3>
+                    <p>二十四節気、七十二候、雑節とその説明をカレンダーから表示するアプリです。俳句の歳時記としてもご利用頂けます。</p>
+                </div>
+            </div>
+            <div class="app-entry">
+                <img src="https://play-lh.googleusercontent.com/PjQqNdMBh5MKIacJ21DCtL9zNo9aq_CQXrW-3Yb4OV__O6jgHeESL_EvEqmR9_DKu-Q=w240-h480" alt="Round Run 1.1 アイコン" class="app-icon">
+                <div class="app-info">
+                    <h3><a href="https://play.google.com/store/apps/details?id=com.studiokei.circuit_runner_2&hl=ja" target="_blank" rel="noopener">Round Run 1.1</a></h3>
+                    <p>走行時間や距離、走行履歴、歩数などの詳細な情報を表示します。地図上で走行軌跡を表示し、地名が変わった際には音声で読み上げます。</p>
+                </div>
+            </div>
+            <div class="app-entry">
+                <img src="https://play-lh.googleusercontent.com/w2fRplmV-25AyKJc_J4lYu5HzdBPj2TDSAW8xbIGbQhoKnY2qrNVzS_8J4acg1VlaeY=w240-h480" alt="天命カレンダー アイコン" class="app-icon">
+                <div class="app-info">
+                    <h3><a href="https://play.google.com/store/apps/details?id=com.studiokei.tianmingcalendar&hl=ja" target="_blank" rel="noopener">天命カレンダー（四柱推命、天中殺）</a></h3>
+                    <p>生年月日を設定するだけで天中殺（空亡）の日がわかるカレンダーです。算命学や四柱推命に基づいた生活のリズム作りに役立ちます。</p>
+                </div>
+            </div>
         </div>
     </div>
-
-    <div class="app-entry">
-        <img src="https://play-lh.googleusercontent.com/PjQqNdMBh5MKIacJ21DCtL9zNo9aq_CQXrW-3Yb4OV__O6jgHeESL_EvEqmR9_DKu-Q=w240-h480" alt="Round Run 1.1 アイコン" class="app-icon">
-        <div class="app-info">
-            <h2><a href="https://play.google.com/store/apps/details?id=com.studiokei.circuit_runner_2&hl=ja">Round Run 1.1</a></h2>
-            <p>
-                Round Run.（ラウンドラン） は、走行時間や距離、走行履歴、歩数などの詳細な情報を表示します。地図上で走行軌跡を表示し、丁目レベルで地名が変わった際には音声で地名を読み上げ ます。また、GPXファイルも出力できるので、配送の記録や車の運行記録にも使えます。タイマーを使えば、インターバルウォーキングも快適に行えます。 さらに、ライトモードとダークモードの使い分けも可能です。Round Run で、より詳細な走行記録が残せます。
-            </p>
-        </div>
-    </div>
-
-    <div class="app-entry">
-        <img src="https://play-lh.googleusercontent.com/w2fRplmV-25AyKJc_J4lYu5HzdBPj2TDSAW8xbIGbQhoKnY2qrNVzS_8J4acg1VlaeY=w240-h480" alt="天命カレンダー アイコン" class="app-icon">
-        <div class="app-info">
-            <h2><a href="https://play.google.com/store/apps/details?id=com.studiokei.tianmingcalendar&hl=ja">天命カレンダー（四柱推命、天中殺）</a></h2>
-            <p>
-                使い方は、設定画面で生年月日を設定して、カレンダーを見るだけ。 カレンダーでは天中殺（空亡）の日にマークが表示されています。 算命学、四柱推命は中国の陰陽五行説を元にして人の命運を推察する方法です。 流行りの占いとは一線を画す統計によって導かれた伝統的な方法です。 派手さはありませんが、生活のリズムをこの運勢の周期に少しだけ合わせることで快適に過ごせるかもしれません。 ※ 天中殺（空亡）の日は、積極的な変化への行動は控え、勉強や休息や老人と過ごすなどの生活が推奨されています。
-            </p>
-        </div>
-    </div>
-
 </body>
 </html>
