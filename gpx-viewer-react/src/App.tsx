@@ -19,7 +19,6 @@ export type TrackPoint = {
 };
 
 function App() {
-  const [originalGpx, setOriginalGpx] = useState<GpxParser | null>(null);
   const [trackPoints, setTrackPoints] = useState<TrackPoint[]>([]);
 
   // State for interactivity
@@ -38,14 +37,13 @@ function App() {
       if (gpxString) {
         const parser = new GpxParser();
         parser.parse(gpxString);
-        setOriginalGpx(parser);
         if (parser.tracks.length > 0) {
             const points: TrackPoint[] = parser.tracks[0].points.map(p => ({
                 lat: p.lat,
                 lon: p.lon,
                 ele: p.ele ?? 0,
                 time: new Date(p.time),
-                speed: p.speed
+                speed: (p as any).speed // Cast to any to bypass the type error
             }));
             setTrackPoints(points);
         }
@@ -55,7 +53,6 @@ function App() {
   };
 
   const handleReset = useCallback(() => {
-    setOriginalGpx(null);
     setTrackPoints([]);
     setActivePointIndex(null);
     setSelectionRange(null);
