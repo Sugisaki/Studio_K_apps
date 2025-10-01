@@ -1,4 +1,4 @@
-import React, { useState, useRef, useEffect, useCallback } from 'react';
+import React, { useState, useRef, useCallback } from 'react';
 import GpxParser from 'gpxparser';
 import Statistics from './components/Statistics';
 import MapComponent from './components/MapComponent';
@@ -9,19 +9,18 @@ import EditControls from './components/EditControls';
 // Import Leaflet styles
 import 'leaflet/dist/leaflet.css';
 
-// Define a type for our track points for better type safety
-export interface TrackPoint {
+// Define and export a type for our track points for better type safety
+export type TrackPoint = {
   lat: number;
   lon: number;
   ele: number;
   time: Date;
   speed?: number;
-}
+};
 
 function App() {
   const [originalGpx, setOriginalGpx] = useState<GpxParser | null>(null);
   const [trackPoints, setTrackPoints] = useState<TrackPoint[]>([]);
-  const [fileName, setFileName] = useState<string>('');
 
   // State for interactivity
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);
@@ -33,7 +32,6 @@ function App() {
     const file = event.target.files?.[0];
     if (!file) return;
 
-    setFileName(file.name);
     const reader = new FileReader();
     reader.onload = (e) => {
       const gpxString = e.target?.result as string;
@@ -42,10 +40,12 @@ function App() {
         parser.parse(gpxString);
         setOriginalGpx(parser);
         if (parser.tracks.length > 0) {
-            // Extract points into a state-managed array for easier manipulation
-            const points = parser.tracks[0].points.map(p => ({
-                ...p,
-                time: new Date(p.time) // Ensure time is a Date object
+            const points: TrackPoint[] = parser.tracks[0].points.map(p => ({
+                lat: p.lat,
+                lon: p.lon,
+                ele: p.ele ?? 0,
+                time: new Date(p.time),
+                speed: p.speed
             }));
             setTrackPoints(points);
         }
@@ -57,7 +57,6 @@ function App() {
   const handleReset = useCallback(() => {
     setOriginalGpx(null);
     setTrackPoints([]);
-    setFileName('');
     setActivePointIndex(null);
     setSelectionRange(null);
     if(fileInputRef.current) {
@@ -83,7 +82,6 @@ function App() {
     setSelectionRange(null);
     setActivePointIndex(null);
   }, [selectionRange]);
-
 
   const hasGpxData = trackPoints.length > 0;
 
@@ -118,13 +116,13 @@ function App() {
                 </small>
               </div>
 
-              {hasGpxData && originalGpx ? (
+              {hasGpxData ? (
                 <div>
                   <Statistics points={trackPoints} />
                   <div className="mt-3">
                     <MapComponent points={trackPoints} activePoint={activePointIndex !== null ? trackPoints[activePointIndex] : null} />
                   </div>
-                  <ChartComponent points={trackPoints} activePointIndex={activePointIndex} />
+                  <ChartComponent points={trackPoints} />
                   <TimelineScrubber
                     points={trackPoints}
                     activePointIndex={activePointIndex}

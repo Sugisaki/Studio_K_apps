@@ -1,5 +1,6 @@
-import React, { useMemo } from 'react';
+import React from 'react';
 import { Line } from 'react-chartjs-2';
+import type { ChartOptions } from 'chart.js';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -9,9 +10,8 @@ import {
   Title,
   Tooltip,
   Legend,
-  ChartOptions,
 } from 'chart.js';
-import { TrackPoint } from '../App';
+import type { TrackPoint } from '../App';
 
 ChartJS.register(
   CategoryScale,
@@ -25,12 +25,14 @@ ChartJS.register(
 
 interface ChartComponentProps {
   points: TrackPoint[];
-  activePointIndex: number | null;
 }
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ points, activePointIndex }) => {
-  const chartData = useMemo(() => {
-    const labels = points.map((p, i) => i);
+const ChartComponent: React.FC<ChartComponentProps> = ({ points }) => {
+
+  const chartData = React.useMemo(() => {
+    if (points.length === 0) return null;
+
+    const labels = points.map((_, i) => i);
     const elevationData = points.map(p => p.ele);
 
     return {
@@ -48,7 +50,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, activePointInde
     };
   }, [points]);
 
-  const options: ChartOptions<'line'> = useMemo(() => ({
+  const options: ChartOptions<'line'> = React.useMemo(() => ({
     responsive: true,
     maintainAspectRatio: false,
     scales: {
@@ -82,15 +84,10 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, activePointInde
         intersect: false,
         mode: 'index',
     },
-    // This is a bit of a trick to highlight the active point
-    // by creating a vertical line annotation.
-    // We can't directly use chartjs-plugin-annotation without installing it,
-    // so we'll simulate it with a custom plugin.
-    // For now, we'll skip this complex part and implement it later if needed.
   }), []);
 
 
-  if (points.length === 0) return null;
+  if (!chartData) return null;
 
   return (
     <div className="mt-3">

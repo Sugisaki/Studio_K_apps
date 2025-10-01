@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { MapContainer, TileLayer, Polyline, Marker, Popup, useMap } from 'react-leaflet';
-import { TrackPoint } from '../App';
+import type { TrackPoint } from '../App';
 import L from 'leaflet';
 
 // Leaflet's default icon paths can break in React. This fixes it.

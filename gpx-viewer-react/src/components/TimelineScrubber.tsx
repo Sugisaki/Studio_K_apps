@@ -1,5 +1,5 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
-import { TrackPoint } from '../App';
+import type { TrackPoint } from '../App';
 
 interface TimelineScrubberProps {
   points: TrackPoint[];

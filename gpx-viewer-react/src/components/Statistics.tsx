@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { TrackPoint } from '../App';
+import type { TrackPoint } from '../App';
 
 interface StatisticsProps {
   points: TrackPoint[];
@@ -21,8 +21,8 @@ const Statistics: React.FC<StatisticsProps> = ({ points }) => {
         distance: '0.00',
         elevationGain: 0,
         elevationLoss: 0,
-        minElevation: 0,
-        maxElevation: 0,
+        minElevation: points.length === 1 ? Math.round(points[0].ele) : 0,
+        maxElevation: points.length === 1 ? Math.round(points[0].ele) : 0,
       };
     }
 
