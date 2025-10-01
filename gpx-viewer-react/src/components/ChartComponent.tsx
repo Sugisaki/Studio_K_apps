@@ -109,7 +109,7 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, onPointSelect }
         intersect: false,
         mode: 'index',
     },
-    onClick: (event, elements: InteractionItem[]) => {
+    onClick: (_, elements: InteractionItem[]) => { // 'event' argument changed to '_'
         if (elements.length > 0) {
             const elementIndex = elements[0].index;
             onPointSelect(elementIndex);

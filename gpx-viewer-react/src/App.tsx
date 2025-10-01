@@ -8,6 +8,8 @@ import EditControls from './components/EditControls';
 
 // Import Leaflet styles
 import 'leaflet/dist/leaflet.css';
+// Import date adapter for chart.js
+import 'chartjs-adapter-date-fns';
 
 // Define and export a type for our track points for better type safety
 export type TrackPoint = {
