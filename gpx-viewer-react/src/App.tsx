@@ -43,7 +43,8 @@ function App() {
                 lon: p.lon,
                 ele: p.ele ?? 0,
                 time: new Date(p.time),
-                speed: (p as any).speed // Cast to any to bypass the type error
+                // Safely access speed property
+                speed: 'speed' in p && typeof p.speed === 'number' ? p.speed : undefined
             }));
             setTrackPoints(points);
         }
@@ -119,7 +120,7 @@ function App() {
                   <div className="mt-3">
                     <MapComponent points={trackPoints} activePoint={activePointIndex !== null ? trackPoints[activePointIndex] : null} />
                   </div>
-                  <ChartComponent points={trackPoints} />
+                  <ChartComponent points={trackPoints} onPointSelect={setActivePointIndex} />
                   <TimelineScrubber
                     points={trackPoints}
                     activePointIndex={activePointIndex}

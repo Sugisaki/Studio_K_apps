@@ -5,7 +5,7 @@ interface StatisticsProps {
   points: TrackPoint[];
 }
 
-// Helper function from original vanilla JS implementation
+// Helper function to calculate distance between two points
 function haversineDistance(p1: {lat: number, lon: number}, p2: {lat: number, lon: number}) {
     const R = 6371; // Radius of Earth in km
     const dLat = (p2.lat - p1.lat) * Math.PI / 180;
@@ -16,14 +16,25 @@ function haversineDistance(p1: {lat: number, lon: number}, p2: {lat: number, lon
 
 const Statistics: React.FC<StatisticsProps> = ({ points }) => {
   const stats = useMemo(() => {
-    if (points.length < 2) {
+    if (points.length === 0) {
       return {
         distance: '0.00',
         elevationGain: 0,
         elevationLoss: 0,
-        minElevation: points.length === 1 ? Math.round(points[0].ele) : 0,
-        maxElevation: points.length === 1 ? Math.round(points[0].ele) : 0,
+        minElevation: 0,
+        maxElevation: 0,
       };
+    }
+
+    if (points.length === 1) {
+        const ele = Math.round(points[0].ele);
+        return {
+            distance: '0.00',
+            elevationGain: 0,
+            elevationLoss: 0,
+            minElevation: ele,
+            maxElevation: ele,
+        };
     }
 
     let totalDistance = 0;
@@ -39,7 +50,7 @@ const Statistics: React.FC<StatisticsProps> = ({ points }) => {
             maxElevation = Math.max(maxElevation, point.ele);
         }
         if (i > 0) {
-            totalDistance += haversineDistance(points[i-1], point);
+            totalDistance += haversineDistance(points[i-1], points[i]);
             if (points[i].ele !== null && points[i-1].ele !== null) {
                 const diff = points[i].ele - points[i-1].ele;
                 if (diff > 0) {
@@ -59,10 +70,6 @@ const Statistics: React.FC<StatisticsProps> = ({ points }) => {
       maxElevation: Math.round(maxElevation),
     };
   }, [points]);
-
-  if (points.length === 0) {
-    return null;
-  }
 
   return (
     <div className="card statistics-card mt-3">

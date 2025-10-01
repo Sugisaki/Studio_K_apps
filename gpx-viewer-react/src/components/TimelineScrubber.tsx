@@ -64,8 +64,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
   };
 
   const positionPercent = getPercentage(activePointIndex);
-  const startPercent = getPercentage(selectionRange ? selectionRange[0] : null);
-  const endPercent = getPercentage(selectionRange ? selectionRange[1] : 1);
+  const startPercent = getPercentage(selectionRange ? selectionRange[0] : 0);
+  const endPercent = getPercentage(selectionRange ? selectionRange[1] : pointsLength - 1);
 
 
   return (
