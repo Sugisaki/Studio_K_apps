@@ -122,7 +122,7 @@ function App() {
                   <div className="mt-3">
                     <MapComponent points={trackPoints} activePoint={activePointIndex !== null ? trackPoints[activePointIndex] : null} />
                   </div>
-                  <ChartComponent points={trackPoints} onPointSelect={setActivePointIndex} />
+                  <ChartComponent points={trackPoints} activePointIndex={activePointIndex} onPointSelect={setActivePointIndex} />
                   <TimelineScrubber
                     points={trackPoints}
                     activePointIndex={activePointIndex}
