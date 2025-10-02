@@ -22,10 +22,16 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
     return Math.round(percentage * (pointsLength - 1));
   }, [pointsLength]);
 
-  const handleMouseMove = useCallback((event: MouseEvent) => {
+  const getClientX = useCallback((event: MouseEvent | TouchEvent) => {
+    return 'touches' in event ? event.touches[0].clientX : event.clientX;
+  }, []);
+
+  const handleMove = useCallback((event: MouseEvent | TouchEvent) => {
     if (!dragging || !scrubberRef.current) return;
 
-    const newIndex = getIndexFromX(event.clientX);
+    event.preventDefault(); // Prevent scrolling on mobile
+    const clientX = getClientX(event);
+    const newIndex = getIndexFromX(clientX);
 
     if (dragging === 'position') {
       onPositionChange(newIndex);
@@ -36,25 +42,31 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
       const start = selectionRange ? selectionRange[0] : 0;
       onRangeChange([start, Math.max(newIndex, start)]);
     }
-  }, [dragging, getIndexFromX, onPositionChange, onRangeChange, selectionRange, pointsLength]);
+  }, [dragging, getIndexFromX, getClientX, onPositionChange, onRangeChange, selectionRange, pointsLength]);
 
-  const handleMouseUp = useCallback(() => {
+  const handleEnd = useCallback(() => {
     setDragging(null);
   }, []);
 
   useEffect(() => {
     if (dragging) {
-      document.addEventListener('mousemove', handleMouseMove);
-      document.addEventListener('mouseup', handleMouseUp);
+      document.addEventListener('mousemove', handleMove);
+      document.addEventListener('mouseup', handleEnd);
+      document.addEventListener('touchmove', handleMove, { passive: false });
+      document.addEventListener('touchend', handleEnd);
     } else {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
     }
     return () => {
-      document.removeEventListener('mousemove', handleMouseMove);
-      document.removeEventListener('mouseup', handleMouseUp);
+      document.removeEventListener('mousemove', handleMove);
+      document.removeEventListener('mouseup', handleEnd);
+      document.removeEventListener('touchmove', handleMove);
+      document.removeEventListener('touchend', handleEnd);
     };
-  }, [dragging, handleMouseMove, handleMouseUp]);
+  }, [dragging, handleMove, handleEnd]);
 
   if (pointsLength === 0) return null;
 
@@ -109,9 +121,11 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 transform: 'translate(-50%, -50%)', 
                 cursor: 'ew-resize', 
                 zIndex: 2,
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                touchAction: 'none'
               }}
               onMouseDown={(e) => { e.stopPropagation(); setDragging('start'); }}
+              onTouchStart={(e) => { e.stopPropagation(); setDragging('start'); }}
               title="範囲開始点"
           ></div>
           {/* End range handle */}
@@ -128,9 +142,11 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 transform: 'translate(-50%, -50%)', 
                 cursor: 'ew-resize', 
                 zIndex: 2,
-                boxSizing: 'border-box'
+                boxSizing: 'border-box',
+                touchAction: 'none'
               }}
               onMouseDown={(e) => { e.stopPropagation(); setDragging('end'); }}
+              onTouchStart={(e) => { e.stopPropagation(); setDragging('end'); }}
               title="範囲終了点"
           ></div>
           {/* Active position marker */}
@@ -148,9 +164,11 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                     transform: 'translate(-50%, -50%)', 
                     cursor: 'grab', 
                     zIndex: 3,
-                    boxSizing: 'border-box'
+                    boxSizing: 'border-box',
+                    touchAction: 'none'
                   }}
                   onMouseDown={(e) => { e.stopPropagation(); setDragging('position'); }}
+                  onTouchStart={(e) => { e.stopPropagation(); setDragging('position'); }}
                   title="現在位置"
               ></div>
           )}
