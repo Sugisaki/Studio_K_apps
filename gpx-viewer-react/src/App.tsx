@@ -18,6 +18,8 @@ export type TrackPoint = {
   ele: number;
   time: Date;
   speed?: number;
+  distance?: number; // For route data
+  isRouteData?: boolean; // Flag to indicate if this is route data
 };
 
 function App() {
@@ -39,16 +41,33 @@ function App() {
       if (gpxString) {
         const parser = new GpxParser();
         parser.parse(gpxString);
+        
+        let rawPoints: any[] = [];
+        let isRouteData = false;
+        
         if (parser.tracks.length > 0) {
-            const rawPoints = parser.tracks[0].points.map(p => ({
+            // Track data (with time)
+            rawPoints = parser.tracks[0].points.map(p => ({
                 lat: p.lat,
                 lon: p.lon,
                 ele: p.ele ?? 0,
                 time: new Date(p.time),
-                // Safely access speed property
                 speed: 'speed' in p && typeof p.speed === 'number' ? p.speed : undefined
             }));
-            
+            isRouteData = false;
+        } else if (parser.routes.length > 0) {
+            // Route data (without time, distance-based)
+            rawPoints = parser.routes[0].points.map(p => ({
+                lat: p.lat,
+                lon: p.lon,
+                ele: p.ele ?? 0,
+                time: new Date(0), // dummy time for route data
+                speed: undefined
+            }));
+            isRouteData = true;
+        }
+        
+        if (rawPoints.length > 0) {
             // Helper function to calculate distance using Haversine formula
             const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
                 const R = 6371000; // Earth radius in meters
@@ -61,7 +80,52 @@ function App() {
                 return R * c; // meters
             };
             
-            // Calculate speed using moving median with 15-second window
+            // Calculate cumulative distance for route data
+            const calculateCumulativeDistance = (points: typeof rawPoints) => {
+                let cumulativeDistance = 0;
+                return points.map((point, index) => {
+                    if (index > 0) {
+                        const distance = calculateDistance(
+                            points[index - 1].lat, points[index - 1].lon,
+                            point.lat, point.lon
+                        );
+                        cumulativeDistance += distance;
+                    }
+                    return { ...point, distance: cumulativeDistance };
+                });
+            };
+
+            // Calculate moving median elevation for route data (25m window)
+            const calculateMovingMedianElevation = (points: any[]): any[] => {
+                const windowDistance = 25; // 25-meter window
+                
+                return points.map((point) => {
+                    const currentDistance = point.distance;
+                    const windowStart = currentDistance - windowDistance / 2;
+                    const windowEnd = currentDistance + windowDistance / 2;
+                    
+                    const windowElevations: number[] = [];
+                    for (const p of points) {
+                        if (p.distance >= windowStart && p.distance <= windowEnd) {
+                            windowElevations.push(p.ele);
+                        }
+                    }
+                    
+                    if (windowElevations.length === 0) {
+                        return point;
+                    }
+                    
+                    // Calculate median elevation
+                    windowElevations.sort((a, b) => a - b);
+                    const medianElevation = windowElevations.length % 2 === 0
+                        ? (windowElevations[windowElevations.length / 2 - 1] + windowElevations[windowElevations.length / 2]) / 2
+                        : windowElevations[Math.floor(windowElevations.length / 2)];
+                    
+                    return { ...point, ele: medianElevation };
+                });
+            };
+
+            // Calculate speed using moving median with 15-second window (for track data)
             const calculateMovingMedianSpeed = (points: typeof rawPoints): TrackPoint[] => {
                 const windowSeconds = 15; // 15-second window
                 
@@ -123,9 +187,31 @@ function App() {
                 });
             };
             
-            const points = calculateMovingMedianSpeed(rawPoints);
+            let points: TrackPoint[];
+            
+            if (isRouteData) {
+                // Process route data (distance-based)
+                const pointsWithDistance = calculateCumulativeDistance(rawPoints);
+                const pointsWithSmoothedElevation = calculateMovingMedianElevation(pointsWithDistance);
+                
+                // Convert to TrackPoint format for route data
+                points = pointsWithSmoothedElevation.map((point, index) => ({
+                    lat: point.lat,
+                    lon: point.lon,
+                    ele: point.ele,
+                    time: new Date(index * 1000), // Use index as dummy time for distance-based x-axis
+                    speed: undefined, // No speed for route data
+                    distance: point.distance, // Add distance property for route data
+                    isRouteData: true // Flag to indicate this is route data
+                })) as TrackPoint[];
+            } else {
+                // Process track data (time-based)
+                points = calculateMovingMedianSpeed(rawPoints);
+            }
             
             setTrackPoints(points);
+        } else {
+            console.warn('No tracks or routes found in GPX file');
         }
       }
     };
