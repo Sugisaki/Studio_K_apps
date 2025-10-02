@@ -30,13 +30,13 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
     if (dragging === 'position') {
       onPositionChange(newIndex);
     } else if (dragging === 'start') {
-      const end = selectionRange ? selectionRange[1] : newIndex;
+      const end = selectionRange ? selectionRange[1] : pointsLength - 1;
       onRangeChange([Math.min(newIndex, end), end]);
     } else if (dragging === 'end') {
-      const start = selectionRange ? selectionRange[0] : newIndex;
+      const start = selectionRange ? selectionRange[0] : 0;
       onRangeChange([start, Math.max(newIndex, start)]);
     }
-  }, [dragging, getIndexFromX, onPositionChange, onRangeChange, selectionRange]);
+  }, [dragging, getIndexFromX, onPositionChange, onRangeChange, selectionRange, pointsLength]);
 
   const handleMouseUp = useCallback(() => {
     setDragging(null);
