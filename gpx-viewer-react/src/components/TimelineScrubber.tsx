@@ -69,9 +69,10 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
 
 
   return (
-    <div ref={scrubberRef} style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}>
-        <div style={{ position: 'absolute', height: '6px', backgroundColor: '#adb5bd', top: '50%', left: '0', right: '0', transform: 'translateY(-50%)', borderRadius: '3px' }}></div>
-        {selectionRange && (
+    <div className="mx-2">
+        <div ref={scrubberRef} style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}>
+            <div style={{ position: 'absolute', height: '6px', backgroundColor: '#adb5bd', top: '50%', left: '0', right: '0', transform: 'translateY(-50%)', borderRadius: '3px' }}></div>
+            {selectionRange && (
             <div style={{ position: 'absolute', height: '6px', backgroundColor: '#0d6efd', top: '50%', left: `${startPercent}%`, width: `${endPercent - startPercent}%`, transform: 'translateY(-50%)' }}></div>
         )}
         <div

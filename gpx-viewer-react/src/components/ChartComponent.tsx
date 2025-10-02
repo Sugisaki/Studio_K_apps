@@ -1,6 +1,6 @@
 import React, { useMemo, useState, useEffect } from 'react';
 import { Line } from 'react-chartjs-2';
-import type { ChartOptions, InteractionItem } from 'chart.js';
+import type { ChartOptions, InteractionItem, Plugin } from 'chart.js';
 import {
   Chart as ChartJS,
   CategoryScale,
@@ -27,17 +27,40 @@ ChartJS.register(
 
 interface ChartComponentProps {
   points: TrackPoint[];
+  activePointIndex: number | null;
   onPointSelect: (index: number | null) => void;
 }
 
 type ChartDataType = 'elevation' | 'speed';
 
-const ChartComponent: React.FC<ChartComponentProps> = ({ points, onPointSelect }) => {
+const verticalLinePlugin: Plugin = {
+    id: 'verticalLine',
+    afterDraw: (chart) => {
+        const activePointIndex = (chart.options.plugins as any)?.verticalLine?.activePointIndex;
+        if (activePointIndex !== null && activePointIndex < chart.data.labels!.length) {
+            const ctx = chart.ctx;
+            const meta = chart.getDatasetMeta(0);
+            const x = meta.data[activePointIndex].x;
+            const topY = chart.scales.y.top;
+            const bottomY = chart.scales.y.bottom;
+
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(x, topY);
+            ctx.lineTo(x, bottomY);
+            ctx.lineWidth = 1;
+            ctx.strokeStyle = '#ffc107';
+            ctx.stroke();
+            ctx.restore();
+        }
+    }
+};
+
+const ChartComponent: React.FC<ChartComponentProps> = ({ points, activePointIndex, onPointSelect }) => {
   const [chartType, setChartType] = useState<ChartDataType>('elevation');
 
   const hasSpeedData = useMemo(() => points.some(p => p.speed !== undefined && p.speed !== null), [points]);
 
-  // If speed data is not available, always show elevation
   useEffect(() => {
     if (!hasSpeedData) {
       setChartType('elevation');
@@ -75,47 +98,33 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, onPointSelect }
         type: 'time',
         time: {
             tooltipFormat: 'HH:mm:ss',
-            displayFormats: {
-                minute: 'HH:mm',
-                hour: 'HH:mm'
-            }
+            displayFormats: { minute: 'HH:mm', hour: 'HH:mm' }
         },
-        ticks: {
-          maxRotation: 0,
-          minRotation: 0,
-          autoSkip: true,
-          maxTicksLimit: 7,
-        },
+        ticks: { maxRotation: 0, minRotation: 0, autoSkip: true, maxTicksLimit: 7 },
       },
       y: {
         type: 'linear' as const,
-        display: true,
         position: 'left' as const,
-        title: {
-          display: true,
-          text: chartType === 'elevation' ? '標高 (m)' : '速度 (km/h)',
-        },
+        title: { display: true, text: chartType === 'elevation' ? '標高 (m)' : '速度 (km/h)' },
       },
     },
     plugins: {
-      legend: {
-        display: false,
-      },
-      tooltip: {
-        enabled: true,
-      },
+      legend: { display: false },
+      tooltip: { enabled: true },
+      verticalLine: { // Custom plugin options
+          activePointIndex: activePointIndex
+      }
     },
     interaction: {
         intersect: false,
         mode: 'index',
     },
-    onClick: (_, elements: InteractionItem[]) => { // 'event' argument changed to '_'
+    onClick: (_, elements: InteractionItem[]) => {
         if (elements.length > 0) {
-            const elementIndex = elements[0].index;
-            onPointSelect(elementIndex);
+            onPointSelect(elements[0].index);
         }
     }
-  }), [chartType, onPointSelect]);
+  }), [chartType, onPointSelect, activePointIndex]);
 
 
   if (!chartData) return null;
@@ -126,35 +135,19 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, onPointSelect }
             <h6><strong>分析グラフ</strong></h6>
             <div>
                 <div className="form-check form-check-inline">
-                    <input
-                        className="form-check-input"
-                        type="radio"
-                        name="chart-axis"
-                        id="chart-elevation"
-                        value="elevation"
-                        checked={chartType === 'elevation'}
-                        onChange={() => setChartType('elevation')}
-                    />
+                    <input className="form-check-input" type="radio" name="chart-axis" id="chart-elevation" value="elevation" checked={chartType === 'elevation'} onChange={() => setChartType('elevation')} />
                     <label className="form-check-label" htmlFor="chart-elevation">標高</label>
                 </div>
                 {hasSpeedData && (
                     <div className="form-check form-check-inline">
-                        <input
-                            className="form-check-input"
-                            type="radio"
-                            name="chart-axis"
-                            id="chart-speed"
-                            value="speed"
-                            checked={chartType === 'speed'}
-                            onChange={() => setChartType('speed')}
-                        />
+                        <input className="form-check-input" type="radio" name="chart-axis" id="chart-speed" value="speed" checked={chartType === 'speed'} onChange={() => setChartType('speed')} />
                         <label className="form-check-label" htmlFor="chart-speed">速度</label>
                     </div>
                 )}
             </div>
         </div>
         <div style={{ height: '150px' }}>
-            <Line options={options} data={chartData} />
+            <Line options={options} data={chartData} plugins={[verticalLinePlugin]} />
         </div>
     </div>
   );
