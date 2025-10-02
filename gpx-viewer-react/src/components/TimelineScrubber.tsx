@@ -70,28 +70,29 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
 
   return (
     <div className="mx-2">
-        <div ref={scrubberRef} style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}>
-            <div style={{ position: 'absolute', height: '6px', backgroundColor: '#adb5bd', top: '50%', left: '0', right: '0', transform: 'translateY(-50%)', borderRadius: '3px' }}></div>
-            {selectionRange && (
-            <div style={{ position: 'absolute', height: '6px', backgroundColor: '#0d6efd', top: '50%', left: `${startPercent}%`, width: `${endPercent - startPercent}%`, transform: 'translateY(-50%)' }}></div>
-        )}
-        <div
-            style={{ position: 'absolute', top: '50%', left: `${startPercent}%`, width: '18px', height: '18px', backgroundColor: '#fff', border: '2px solid #0d6efd', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'ew-resize', zIndex: 2 }}
-            onMouseDown={(e) => { e.stopPropagation(); setDragging('start'); }}
-            title="範囲開始点"
-        ></div>
-        <div
-            style={{ position: 'absolute', top: '50%', left: `${endPercent}%`, width: '18px', height: '18px', backgroundColor: '#fff', border: '2px solid #0d6efd', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'ew-resize', zIndex: 2 }}
-            onMouseDown={(e) => { e.stopPropagation(); setDragging('end'); }}
-            title="範囲終了点"
-        ></div>
-        {activePointIndex !== null && (
-            <div
-                style={{ position: 'absolute', top: '50%', left: `${positionPercent}%`, width: '18px', height: '18px', backgroundColor: '#ffc107', borderColor: '#ffc107', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'grab', zIndex: 3 }}
-                onMouseDown={(e) => { e.stopPropagation(); setDragging('position'); }}
-                title="現在位置"
-            ></div>
-        )}
+      <div ref={scrubberRef} style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}>
+          <div style={{ position: 'absolute', height: '6px', backgroundColor: '#adb5bd', top: '50%', left: '0', right: '0', transform: 'translateY(-50%)', borderRadius: '3px' }}></div>
+          {selectionRange && (
+              <div style={{ position: 'absolute', height: '6px', backgroundColor: '#0d6efd', top: '50%', left: `${startPercent}%`, width: `${endPercent - startPercent}%`, transform: 'translateY(-50%)' }}></div>
+          )}
+          <div
+              style={{ position: 'absolute', top: '50%', left: `${startPercent}%`, width: '18px', height: '18px', backgroundColor: '#fff', border: '2px solid #0d6efd', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'ew-resize', zIndex: 2 }}
+              onMouseDown={(e) => { e.stopPropagation(); setDragging('start'); }}
+              title="範囲開始点"
+          ></div>
+          <div
+              style={{ position: 'absolute', top: '50%', left: `${endPercent}%`, width: '18px', height: '18px', backgroundColor: '#fff', border: '2px solid #0d6efd', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'ew-resize', zIndex: 2 }}
+              onMouseDown={(e) => { e.stopPropagation(); setDragging('end'); }}
+              title="範囲終了点"
+          ></div>
+          {activePointIndex !== null && (
+              <div
+                  style={{ position: 'absolute', top: '50%', left: `${positionPercent}%`, width: '18px', height: '18px', backgroundColor: '#ffc107', borderColor: '#ffc107', borderRadius: '50%', transform: 'translate(-50%, -50%)', cursor: 'grab', zIndex: 3 }}
+                  onMouseDown={(e) => { e.stopPropagation(); setDragging('position'); }}
+                  title="現在位置"
+              ></div>
+          )}
+      </div>
     </div>
   );
 };
