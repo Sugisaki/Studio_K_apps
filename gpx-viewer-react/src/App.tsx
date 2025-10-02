@@ -40,7 +40,7 @@ function App() {
         const parser = new GpxParser();
         parser.parse(gpxString);
         if (parser.tracks.length > 0) {
-            const points: TrackPoint[] = parser.tracks[0].points.map(p => ({
+            const rawPoints = parser.tracks[0].points.map(p => ({
                 lat: p.lat,
                 lon: p.lon,
                 ele: p.ele ?? 0,
@@ -48,6 +48,83 @@ function App() {
                 // Safely access speed property
                 speed: 'speed' in p && typeof p.speed === 'number' ? p.speed : undefined
             }));
+            
+            // Helper function to calculate distance using Haversine formula
+            const calculateDistance = (lat1: number, lon1: number, lat2: number, lon2: number): number => {
+                const R = 6371000; // Earth radius in meters
+                const dLat = (lat2 - lat1) * Math.PI / 180;
+                const dLon = (lon2 - lon1) * Math.PI / 180;
+                const a = Math.sin(dLat/2) * Math.sin(dLat/2) +
+                         Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) *
+                         Math.sin(dLon/2) * Math.sin(dLon/2);
+                const c = 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+                return R * c; // meters
+            };
+            
+            // Calculate speed using moving median with 15-second window
+            const calculateMovingMedianSpeed = (points: typeof rawPoints): TrackPoint[] => {
+                const windowSeconds = 15; // 15-second window
+                
+                return points.map((point, index) => {
+                    if (point.speed !== undefined) {
+                        return point; // Use existing speed data
+                    }
+                    
+                    if (index === 0) {
+                        return { ...point, speed: 0 }; // First point has no speed
+                    }
+                    
+                    // Find points within the time window centered on current point
+                    const currentTime = point.time.getTime();
+                    const windowStart = currentTime - (windowSeconds * 1000) / 2;
+                    const windowEnd = currentTime + (windowSeconds * 1000) / 2;
+                    
+                    const windowIndices: number[] = [];
+                    for (let i = 0; i < points.length; i++) {
+                        const time = points[i].time.getTime();
+                        if (time >= windowStart && time <= windowEnd) {
+                            windowIndices.push(i);
+                        }
+                    }
+                    
+                    if (windowIndices.length < 2) {
+                        return { ...point, speed: 0 };
+                    }
+                    
+                    // Calculate instantaneous speeds between consecutive points in the window
+                    const speeds: number[] = [];
+                    
+                    for (let i = 0; i < windowIndices.length - 1; i++) {
+                        const idx1 = windowIndices[i];
+                        const idx2 = windowIndices[i + 1];
+                        const p1 = points[idx1];
+                        const p2 = points[idx2];
+                        
+                        const timeDiff = (p2.time.getTime() - p1.time.getTime()) / 1000; // seconds
+                        
+                        if (timeDiff > 0) {
+                            const distance = calculateDistance(p1.lat, p1.lon, p2.lat, p2.lon);
+                            const speed = distance / timeDiff; // m/s
+                            speeds.push(speed);
+                        }
+                    }
+                    
+                    if (speeds.length === 0) {
+                        return { ...point, speed: 0 };
+                    }
+                    
+                    // Calculate median speed
+                    speeds.sort((a, b) => a - b);
+                    const medianSpeed = speeds.length % 2 === 0
+                        ? (speeds[speeds.length / 2 - 1] + speeds[speeds.length / 2]) / 2
+                        : speeds[Math.floor(speeds.length / 2)];
+                    
+                    return { ...point, speed: medianSpeed };
+                });
+            };
+            
+            const points = calculateMovingMedianSpeed(rawPoints);
+            
             setTrackPoints(points);
         }
       }

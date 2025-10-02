@@ -131,19 +131,15 @@ const ChartComponent: React.FC<ChartComponentProps> = ({ points, activePointInde
 
   return (
     <div className="mt-3">
-        <div className="d-flex justify-content-between align-items-center">
-            <h6><strong>分析グラフ</strong></h6>
-            <div>
-                <div className="form-check form-check-inline">
-                    <input className="form-check-input" type="radio" name="chart-axis" id="chart-elevation" value="elevation" checked={chartType === 'elevation'} onChange={() => setChartType('elevation')} />
-                    <label className="form-check-label" htmlFor="chart-elevation">標高</label>
-                </div>
-                {hasSpeedData && (
-                    <div className="form-check form-check-inline">
-                        <input className="form-check-input" type="radio" name="chart-axis" id="chart-speed" value="speed" checked={chartType === 'speed'} onChange={() => setChartType('speed')} />
-                        <label className="form-check-label" htmlFor="chart-speed">速度</label>
-                    </div>
-                )}
+        <h6><strong>分析グラフ</strong></h6>
+        <div className="mb-2">
+            <div className="form-check form-check-inline">
+                <input className="form-check-input" type="radio" name="chart-axis" id="chart-elevation" value="elevation" checked={chartType === 'elevation'} onChange={() => setChartType('elevation')} />
+                <label className="form-check-label" htmlFor="chart-elevation">標高</label>
+            </div>
+            <div className="form-check form-check-inline">
+                <input className="form-check-input" type="radio" name="chart-axis" id="chart-speed" value="speed" checked={chartType === 'speed'} onChange={() => setChartType('speed')} disabled={!hasSpeedData} />
+                <label className="form-check-label" htmlFor="chart-speed">速度</label>
             </div>
         </div>
         <div style={{ height: '150px' }}>
