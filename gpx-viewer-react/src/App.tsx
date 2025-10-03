@@ -265,7 +265,7 @@ function App() {
         <div className="col-lg-10">
           <div className="card mb-4">
             <div className="card-header">
-              <h4 className="mb-0">Round Run GPXビューア (React版)</h4>
+              <h4 className="mb-0">Round Run GPXビューア</h4>
             </div>
             <div className="card-body">
               <div className="mb-3">

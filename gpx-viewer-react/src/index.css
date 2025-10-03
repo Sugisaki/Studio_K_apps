@@ -20,3 +20,12 @@ body {
     justify-content: space-between;
     margin-bottom: 8px;
 }
+
+/* PC向けレイアウト調整 */
+@media (min-width: 768px) {
+    .container {
+        /* Bootstrapの固定幅コンテナを上書きし、ビューポートの90%の幅にする */
+        max-width: 90%;
+        width: 90%;
+    }
+}
