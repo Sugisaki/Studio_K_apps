@@ -1,20 +1,146 @@
-<!doctype html>
+<!DOCTYPE html>
 <html lang="ja">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/vite.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Round Run GPX Viewer</title>
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Round Run GPXビューア</title>
+    <!-- Bootstrap CSS -->
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/css/bootstrap.min.css" rel="stylesheet">
+    <style>
+        body {
+            background-color: #f0f2f5;
+            padding-top: 20px;
+            padding-bottom: 20px;
+        }
+        .container {
+            max-width: 1024px;
+        }
+        .statistics-card {
+            background-color: #f8f9fa;
+            border-radius: 8px;
+            padding: 15px;
+            margin-bottom: 20px;
+        }
+        .stat-item {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+        }
+        .stat-item:last-child {
+            margin-bottom: 0;
+        }
+        .accordion-body p, .accordion-body ul {
+            margin-bottom: 1rem;
+        }
+        .accordion-body ul {
+            padding-left: 1.5rem;
+        }
+        .accordion-body li {
+            margin-bottom: 0.5rem;
+        }
+    </style>
     <!--STYLES_HERE-->
-  </head>
-  <body>
-    <div class="container mt-4">
-      <h1>GPX Viewer</h1>
-      <p>ここにGPXファイルビューアの説明を記述します。この部分はビルド後も保持されます。</p>
-      <p>ファイルをドラッグ＆ドロップするか、下のボタンからファイルを選択してください。</p>
+</head>
+<body>
+
+<!-- React -->
+<div id="root"></div>
+<!--SCRIPTS_HERE-->
+
+<div class="container">
+    <div class="row justify-content-center">
+        <div class="col-lg-10">
+            <!-- Content Section -->
+            <div class="card">
+                <div class="card-body">
+                    <div class="accordion" id="contentAccordion">
+
+                        <!-- Tutorial -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingOne">
+                                <button class="accordion-button" type="button" data-bs-toggle="collapse" data-bs-target="#collapseOne" aria-expanded="true" aria-controls="collapseOne">
+                                    ツールの詳細な使い方・チュートリアル
+                                </button>
+                            </h2>
+                            <div id="collapseOne" class="accordion-collapse collapse show" aria-labelledby="headingOne" data-bs-parent="#contentAccordion">
+                                <div class="accordion-body">
+                                    <p>このGPXビューアは、あなたが持っているGPXファイルを簡単に地図上で可視化し、分析するためのツールです。以下のステップに従って操作してください。</p>
+                                    <ol>
+                                        <li><strong>ファイル選択:</strong> ページ上部にある「GPXファイルを選択してください」と書かれたボタンをクリックし、お使いのデバイスからGPXファイル（拡張子が.gpxのもの）を選択します。</li>
+                                        <li><strong>データ表示:</strong> ファイルを選択すると、即座に地図上に軌跡（トラックまたはルート）が表示されます。同時に、ファイル名、距離、標高などの基本情報や統計データもカード形式で表示されます。</li>
+                                        <li><strong>地図操作:</strong> 地図はマウスやタッチ操作で自由に拡大・縮小・移動が可能です。軌跡の上にマウスカーソルを合わせると、その軌跡の名称（トラックまたはルート）が表示されます。</li>
+                                        <li><strong>グラフ分析:</strong> ページ下部には分析グラフが表示されます。GPXファイルに時間情報が含まれている場合は「標高」と「速度」を、含まれていない場合は「標高」のみを距離ベースで表示します。ラジオボタンで表示するデータを切り替えることができます。</li>
+                                        <li><strong>グラフと地図の連動:</strong> グラフ上の任意の点をクリックすると、地図上の対応する位置にマーカーが表示され、地図がその地点に自動的に移動します。これにより、特定の地点の標高や速度を視覚的に確認できます。</li>
+                                    </ol>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Technical Info -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingTwo">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseTwo" aria-expanded="false" aria-controls="collapseTwo">
+                                    GPXファイルとGPS技術について
+                                </button>
+                            </h2>
+                            <div id="collapseTwo" class="accordion-collapse collapse" aria-labelledby="headingTwo" data-bs-parent="#contentAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>GPSとは？</strong><br>GPS（Global Positioning System）は、人工衛星を利用して地球上の現在位置を特定するシステムです。スマートフォンやカーナビなど、私たちの身の回りの多くの機器で利用されています。</p>
+                                    <p><strong>GPXファイルとは？</strong><br>GPX（GPS Exchange Format）は、GPSデバイスやアプリケーション間で位置情報データを交換するための標準的なファイル形式です。XMLという汎用的なデータ形式をベースにしており、主に以下の3種類のデータを含めることができます。</p>
+                                    <ul>
+                                        <li><strong>ウェイポイント (Waypoint):</strong> 特定の地点情報です。山頂や休憩ポイントなど、単一の場所を記録するのに使われます。（地図上では 'W' マーカーで表示されます）</li>
+                                        <li><strong>ルート (Route):</strong> 移動予定の経由地のリストです。ナビゲーションソフトウェアが、ある地点から別の地点への経路を計画する際に使用されます。（地図上では破線で表示されます）</li>
+                                        <li><strong>トラック (Track):</strong> 実際に移動した軌跡の記録です。多数のトラックポイント（緯度、経度、標高、時刻などを含む）が連続して記録されており、ランニングや登山の実際の足取りを示します。（地図上では実線で表示されます）</li>
+                                    </ul>
+                                    <p>このツールは、これらのGPXファイル内の情報を解析し、ユーザーが視覚的に理解しやすい形で地図とグラフに表示します。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- FAQ -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingThree">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseThree" aria-expanded="false" aria-controls="collapseThree">
+                                    よくある質問 (FAQ)
+                                </button>
+                            </h2>
+                            <div id="collapseThree" class="accordion-collapse collapse" aria-labelledby="headingThree" data-bs-parent="#contentAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>Q. 対応しているファイル形式は何ですか？</strong><br>A. GPX（.gpx）形式のファイルに対応しています。KMLやTCXなど、他の形式には現在対応しておりません。</p>
+                                    <p><strong>Q. アップロードできるファイルサイズに上限はありますか？</strong><br>A. 厳密な上限はありませんが、ファイルサイズが非常に大きい（数十MB以上）場合や、含まれるポイント数が極端に多い場合、ブラウザの処理能力によっては動作が遅くなったり、停止したりする可能性があります。快適にご利用いただくためには、10MB以下のファイルを推奨します。</p>
+                                    <p><strong>Q. ファイルはサーバーに保存されますか？</strong><br>A. いいえ、保存されません。このツールはすべてブラウザ内で完結するよう設計されています。選択されたGPXファイルは、お使いのコンピュータのメモリ上で一時的に読み込まれるだけで、外部のサーバーにアップロードされたり保存されたりすることは一切ありません。</p>
+                                    <p><strong>Q. 速度グラフが表示されません。</strong><br>A. 速度を計算するには、GPXファイル内の各ポイントに正確なタイムスタンプ（時間情報）が含まれている必要があります。時間情報が含まれていないGPXファイルの場合、距離ベースの標高グラフのみが表示されます。</p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <!-- Privacy Policy -->
+                        <div class="accordion-item">
+                            <h2 class="accordion-header" id="headingFour">
+                                <button class="accordion-button collapsed" type="button" data-bs-toggle="collapse" data-bs-target="#collapseFour" aria-expanded="false" aria-controls="collapseFour">
+                                    プライバシーポリシー
+                                </button>
+                            </h2>
+                            <div id="collapseFour" class="accordion-collapse collapse" aria-labelledby="headingFour" data-bs-parent="#contentAccordion">
+                                <div class="accordion-body">
+                                    <p><strong>1. ファイルの取り扱いについて</strong><br>当ツール（Round Run GPXビューア）は、ユーザーが選択したGPXファイルを外部のサーバーにアップロードまたは保存することはありません。すべてのファイル処理は、ユーザーがお使いのウェブブラウザ内で完結します。したがって、あなたの位置情報データが第三者に送信されることはありません。</p>
+                                    <p><strong>2. 広告配信について</strong><br>当サイトでは、第三者配信の広告サービス「Google AdSense」を利用しています。広告配信事業者は、ユーザーの興味に応じた広告を表示するために、当サイトや他のサイトへのアクセスに関する情報（Cookie）を使用することがあります。これには氏名、住所、メールアドレス、電話番号は含まれません。Google AdSenseに関して、このプロセスの詳細や、こうした情報が広告配信事業者に使用されないようにする方法については、<a href="https://policies.google.com/technologies/ads?hl=ja" target="_blank" rel="noopener">Googleの広告とコンテンツネットワークに関するプライバシーポリシー</a>をご確認ください。</p>
+                                    <p><strong>3. アクセス解析について</strong><br>当サイトでは、サービス向上のためにGoogleによるアクセス解析ツール「Google Analytics」を利用しています。このGoogle Analyticsはトラフィックデータの収集のためにCookieを使用しています。このトラフィックデータは匿名で収集されており、個人を特定するものではありません。この機能は、Cookieを無効にすることで収集を拒否することが出来ますので、お使いのブラウザの設定をご確認ください。</p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <footer class="text-center mt-4 mb-4">
+                <a href="./index.html">トップページに戻る</a>
+            </footer>
+        </div>
     </div>
-    <div id="root"></div>
-    <!--SCRIPTS_HERE-->
-  </body>
+</div>
+
+<!-- Bootstrap JS -->
+<script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.3/dist/js/bootstrap.bundle.min.js"></script>
+
+</body>
 </html>
