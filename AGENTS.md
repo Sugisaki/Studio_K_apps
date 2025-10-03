@@ -26,8 +26,10 @@ Studio_K_apps/
 │   └── eslint.config.js       # ESLint設定
 ├── assets/                    # ビルド済みアセットファイル（CSS, JS）
 ├── index.html                 # ランディングページ（Studio Kアプリ一覧）
+├── gpx-viewer.html.template   # GPXビューのテンプレート（説明文など）
 ├── gpx-viewer.html            # ビルド済みGPXビューアアプリ
 ├── install_packages.sh        # 依存関係インストールスクリプト
+├── build.sh                   # ビルドスクリプト
 ├── build_and_http.sh          # ビルド＆HTTPサーバー起動スクリプト
 ├── README.md                  # プロジェクト概要
 └── AGENTS.md                  # このファイル（詳細仕様書）

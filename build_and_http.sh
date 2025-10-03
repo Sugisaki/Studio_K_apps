@@ -13,4 +13,4 @@ echo "🏃 ビルドスクリプトを実行します..."
 
 # http-server の起動
 echo "🚀 HTTPサーバーを起動します..."
-npx http-server . -p 8080 || handle_error "http-server の起動に失敗しました"
+npx http-server || handle_error "http-server の起動に失敗しました"

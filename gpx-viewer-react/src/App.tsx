@@ -259,13 +259,13 @@ function App() {
   const hasGpxData = trackPoints.length > 0;
 
   return (
-    <div className="container mt-4 mb-4">
+    <div className="container-fluid mt-4 mb-4">
       {/* 以下UIコンポーネントの構築 */}
       <div className="row justify-content-center">
         <div className="col-lg-10">
           <div className="card mb-4">
             <div className="card-header">
-              <h4 className="mb-0">Round Run GPXビューア (React版)</h4>
+              <h4 className="mb-0">Round Run GPXビューア</h4>
             </div>
             <div className="card-body">
               <div className="mb-3">
