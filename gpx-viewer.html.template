@@ -47,6 +47,21 @@
 <div id="root"></div>
 <!--SCRIPTS_HERE-->
 
+<div id="ad-area">
+    <!-- 広告 -->
+    <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-8476184866510745"
+            crossorigin="anonymous"></script>
+    <ins class="adsbygoogle"
+            style="display:block"
+            data-ad-client="ca-pub-8476184866510745"
+            data-ad-slot="4924483292"
+            data-ad-format="auto"
+            data-full-width-responsive="true"></ins>
+    <script>
+        (adsbygoogle = window.adsbygoogle || []).push({});
+    </script>
+</div>
+
 <div class="container content-container">
     <div class="row justify-content-center">
         <div class="col-lg-10">
