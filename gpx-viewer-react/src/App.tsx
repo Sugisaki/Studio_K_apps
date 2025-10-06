@@ -11,6 +11,15 @@ import 'leaflet/dist/leaflet.css';
 // Import date adapter for chart.js
 import 'chartjs-adapter-date-fns';
 
+// 色の定数定義
+export const COLORS = {
+  SELECTION_RANGE: '#ff6600',        // 編集対象範囲（目立つオレンジ色）
+  NORMAL_TRACK: '#dc3545',           // 通常の軌跡（赤色）
+  NON_SELECTED_EDITING: '#6c757d',   // 編集対象外（編集中のみ・グレー色）
+  ACTIVE_POINT: '#ffc107',           // 現在のアクティブポイント（黄色）
+  SCRUBBER_BASE: '#adb5bd'           // スクラバーの基準バー（グレー）
+} as const;
+
 // Define and export a type for our track points for better type safety
 export type TrackPoint = {
   lat: number;
@@ -25,10 +34,21 @@ export type TrackPoint = {
 function App() {
   // トラック情報を保持する状態
   const [trackPoints, setTrackPoints] = useState<TrackPoint[]>([]);
+  
+  // 元のファイル名を保持する状態
+  const [originalFileName, setOriginalFileName] = useState<string>('');
 
   // インタラクティブ操作のための状態管理
   const [activePointIndex, setActivePointIndex] = useState<number | null>(null);  // アクティブな点のインデックス
   const [selectionRange, setSelectionRange] = useState<[number, number] | null>(null);  // 選択範囲
+  
+  // エクスポートモーダルの状態管理
+  const [showExportModal, setShowExportModal] = useState<boolean>(false);
+  const [exportFileName, setExportFileName] = useState<string>('');
+  
+  // 編集状態の追跡
+  const [hasBeenEdited, setHasBeenEdited] = useState<boolean>(false);
+  const [isEditing, setIsEditing] = useState<boolean>(false);
 
   // ファイル入力要素への参照
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -36,6 +56,12 @@ function App() {
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (!file) return;
+
+    // 元のファイル名を保存（拡張子を除く）
+    const fileName = file.name;
+    const fileNameWithoutExt = fileName.replace(/\.[^/.]+$/, "");
+    setOriginalFileName(fileName);
+    setExportFileName(`${fileNameWithoutExt}_export.gpx`);
 
     const reader = new FileReader();
     reader.onload = (e) => {
@@ -229,6 +255,11 @@ function App() {
     setTrackPoints([]);
     setActivePointIndex(null);
     setSelectionRange(null);
+    setOriginalFileName('');
+    setExportFileName('');
+    setShowExportModal(false);
+    setHasBeenEdited(false);
+    setIsEditing(false);
     if(fileInputRef.current) {
         fileInputRef.current.value = '';
     }
@@ -241,6 +272,8 @@ function App() {
     setTrackPoints(prevPoints => prevPoints.slice(start, end + 1));
     setSelectionRange(null);
     setActivePointIndex(null);
+    setHasBeenEdited(true);  // 編集状態をtrueに設定
+    setIsEditing(false);  // 編集中状態を解除
   }, [selectionRange]);
 
   // 選択範囲の削除処理
@@ -253,7 +286,91 @@ function App() {
     ]);
     setSelectionRange(null);
     setActivePointIndex(null);
+    setHasBeenEdited(true);  // 編集状態をtrueに設定
+    setIsEditing(false);  // 編集中状態を解除
   }, [selectionRange]);
+
+  // GPXファイル生成関数
+  const generateGPXContent = (points: TrackPoint[]): string => {
+    const isRoute = points[0]?.isRouteData;
+    
+    // GPXヘッダー
+    let gpx = `<?xml version="1.0" encoding="UTF-8"?>
+<gpx version="1.1" creator="Round Run GPX Viewer" xmlns="http://www.topografix.com/GPX/1/1">
+  <metadata>
+    <name>Exported Track</name>
+    <desc>Exported from Round Run GPX Viewer</desc>
+    <time>${new Date().toISOString()}</time>
+  </metadata>`;
+
+    if (isRoute) {
+      // ルートデータとしてエクスポート
+      gpx += `
+  <rte>
+    <name>Exported Route</name>`;
+      points.forEach(point => {
+        gpx += `
+    <rtept lat="${point.lat}" lon="${point.lon}">
+      <ele>${point.ele}</ele>
+    </rtept>`;
+      });
+      gpx += `
+  </rte>`;
+    } else {
+      // トラックデータとしてエクスポート
+      gpx += `
+  <trk>
+    <name>Exported Track</name>
+    <trkseg>`;
+      points.forEach(point => {
+        gpx += `
+      <trkpt lat="${point.lat}" lon="${point.lon}">
+        <ele>${point.ele}</ele>
+        <time>${point.time.toISOString()}</time>
+      </trkpt>`;
+      });
+      gpx += `
+    </trkseg>
+  </trk>`;
+    }
+    
+    gpx += `
+</gpx>`;
+    
+    return gpx;
+  };
+
+  // GPXエクスポートモーダル表示処理
+  const handleExportGPX = useCallback(() => {
+    if (trackPoints.length === 0 || !hasBeenEdited) return;
+    setShowExportModal(true);
+  }, [trackPoints, hasBeenEdited]);
+
+  // 実際のGPXエクスポート実行処理
+  const executeExport = useCallback(() => {
+    if (trackPoints.length === 0 || !exportFileName) return;
+    
+    const gpxContent = generateGPXContent(trackPoints);
+    
+    // ファイルダウンロード
+    const blob = new Blob([gpxContent], { type: 'application/gpx+xml' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = exportFileName;
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+    
+    // モーダルを閉じる
+    setShowExportModal(false);
+  }, [trackPoints, exportFileName]);
+
+  // モーダルを閉じる処理
+  const handleCloseModal = useCallback(() => {
+    setShowExportModal(false);
+  }, []);
 
   // GPXデータが読み込まれているかのフラグ
   const hasGpxData = trackPoints.length > 0;
@@ -265,7 +382,7 @@ function App() {
         <div className="col-lg-10">
           <div className="card mb-4">
             <div className="card-header">
-              <h4 className="mb-0">Round Run GPXビューア</h4>
+              <h4 className="mb-0">Round Run GPXビューア／GPXエディタ</h4>
             </div>
             <div className="card-body">
               <div className="mb-3">
@@ -294,7 +411,12 @@ function App() {
                 <div>
                   <Statistics points={trackPoints} />
                   <div className="mt-3">
-                    <MapComponent points={trackPoints} activePoint={activePointIndex !== null ? trackPoints[activePointIndex] : null} />
+                    <MapComponent 
+                      points={trackPoints} 
+                      activePoint={activePointIndex !== null ? trackPoints[activePointIndex] : null} 
+                      selectionRange={selectionRange}
+                      isEditing={isEditing}
+                    />
                   </div>
                   <ChartComponent points={trackPoints} activePointIndex={activePointIndex} onPointSelect={setActivePointIndex} />
                   <TimelineScrubber
@@ -303,8 +425,16 @@ function App() {
                     selectionRange={selectionRange}
                     onPositionChange={setActivePointIndex}
                     onRangeChange={setSelectionRange}
+                    onEditingStart={() => setIsEditing(true)}
                   />
-                  <EditControls onCrop={handleCrop} onDelete={handleDelete} hasSelection={!!selectionRange} />
+                  <EditControls 
+                    onCrop={handleCrop} 
+                    onDelete={handleDelete} 
+                    onExport={handleExportGPX}
+                    hasSelection={!!selectionRange} 
+                    hasBeenEdited={hasBeenEdited}
+                    isEditing={isEditing}
+                  />
                 </div>
               ) : (
                 <div className="text-center p-5">
@@ -315,6 +445,60 @@ function App() {
           </div>
         </div>
       </div>
+
+      {/* エクスポートモーダル */}
+      {showExportModal && (
+        <div className="modal show" style={{ display: 'block', backgroundColor: 'rgba(0,0,0,0.5)' }}>
+          <div className="modal-dialog modal-dialog-centered">
+            <div className="modal-content">
+              <div className="modal-header">
+                <h5 className="modal-title">GPXファイルのエクスポート</h5>
+                <button 
+                  type="button" 
+                  className="btn-close" 
+                  onClick={handleCloseModal}
+                  aria-label="Close"
+                ></button>
+              </div>
+              <div className="modal-body">
+                <div className="mb-3">
+                  <label htmlFor="export-filename" className="form-label">
+                    ファイル名を入力してください
+                  </label>
+                  <input
+                    type="text"
+                    className="form-control"
+                    id="export-filename"
+                    value={exportFileName}
+                    onChange={(e) => setExportFileName(e.target.value)}
+                    placeholder="ファイル名を入力"
+                  />
+                  <div className="form-text">
+                    元のファイル名: {originalFileName}
+                  </div>
+                </div>
+              </div>
+              <div className="modal-footer">
+                <button 
+                  type="button" 
+                  className="btn btn-secondary" 
+                  onClick={handleCloseModal}
+                >
+                  キャンセル
+                </button>
+                <button 
+                  type="button" 
+                  className="btn btn-success" 
+                  onClick={executeExport}
+                  disabled={!exportFileName.trim()}
+                >
+                  📤 エクスポート
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

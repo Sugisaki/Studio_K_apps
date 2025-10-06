@@ -1,15 +1,17 @@
 import React, { useState, useRef, useEffect, useCallback } from 'react';
 import type { TrackPoint } from '../App';
+import { COLORS } from '../App';
 
 interface TimelineScrubberProps {
   points: TrackPoint[];
   onPositionChange: (index: number | null) => void;
   onRangeChange: (range: [number, number] | null) => void;
+  onEditingStart: () => void;
   activePointIndex: number | null;
   selectionRange: [number, number] | null;
 }
 
-const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionChange, onRangeChange, activePointIndex, selectionRange }) => {
+const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionChange, onRangeChange, onEditingStart, activePointIndex, selectionRange }) => {
   const scrubberRef = useRef<HTMLDivElement>(null);
   const [dragging, setDragging] = useState<null | 'position' | 'start' | 'end'>(null);
 
@@ -80,14 +82,27 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
   const endPercent = getPercentage(selectionRange ? selectionRange[1] : pointsLength - 1);
 
 
+  // スクラバーバーのクリック処理
+  const handleScrubberClick = useCallback((event: React.MouseEvent<HTMLDivElement>) => {
+    if (!scrubberRef.current || dragging) return;
+    
+    const clientX = event.clientX;
+    const newIndex = getIndexFromX(clientX);
+    onPositionChange(newIndex);
+  }, [dragging, getIndexFromX, onPositionChange]);
+
   return (
     <div className="mx-2">
-      <div ref={scrubberRef} style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}>
+      <div 
+        ref={scrubberRef} 
+        style={{ width: '100%', height: '40px', backgroundColor: '#e9ecef', position: 'relative', borderRadius: '5px', marginTop: '1rem', cursor: 'pointer' }}
+        onClick={handleScrubberClick}
+      >
           {/* Base track bar - Firefox compatible */}
           <div style={{ 
             position: 'absolute', 
             height: '6px', 
-            backgroundColor: '#adb5bd', 
+            backgroundColor: COLORS.SCRUBBER_BASE, 
             top: '50%', 
             left: '0px', 
             width: '100%', 
@@ -99,7 +114,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
               <div style={{ 
                 position: 'absolute', 
                 height: '6px', 
-                backgroundColor: '#0d6efd', 
+                backgroundColor: COLORS.SELECTION_RANGE, 
                 top: '50%', 
                 left: `${startPercent}%`, 
                 width: `${endPercent - startPercent}%`, 
@@ -116,7 +131,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 width: '18px', 
                 height: '18px', 
                 backgroundColor: '#fff', 
-                border: '2px solid #0d6efd', 
+                border: `2px solid ${COLORS.SELECTION_RANGE}`, 
                 borderRadius: '50%', 
                 transform: 'translate(-50%, -50%)', 
                 cursor: 'ew-resize', 
@@ -124,8 +139,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 boxSizing: 'border-box',
                 touchAction: 'none'
               }}
-              onMouseDown={(e) => { e.stopPropagation(); setDragging('start'); }}
-              onTouchStart={(e) => { e.stopPropagation(); setDragging('start'); }}
+              onMouseDown={(e) => { e.stopPropagation(); setDragging('start'); onEditingStart(); }}
+              onTouchStart={(e) => { e.stopPropagation(); setDragging('start'); onEditingStart(); }}
               title="範囲開始点"
           ></div>
           {/* End range handle */}
@@ -137,7 +152,7 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 width: '18px', 
                 height: '18px', 
                 backgroundColor: '#fff', 
-                border: '2px solid #0d6efd', 
+                border: `2px solid ${COLORS.SELECTION_RANGE}`, 
                 borderRadius: '50%', 
                 transform: 'translate(-50%, -50%)', 
                 cursor: 'ew-resize', 
@@ -145,8 +160,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                 boxSizing: 'border-box',
                 touchAction: 'none'
               }}
-              onMouseDown={(e) => { e.stopPropagation(); setDragging('end'); }}
-              onTouchStart={(e) => { e.stopPropagation(); setDragging('end'); }}
+              onMouseDown={(e) => { e.stopPropagation(); setDragging('end'); onEditingStart(); }}
+              onTouchStart={(e) => { e.stopPropagation(); setDragging('end'); onEditingStart(); }}
               title="範囲終了点"
           ></div>
           {/* Active position marker */}
@@ -158,8 +173,8 @@ const TimelineScrubber: React.FC<TimelineScrubberProps> = ({ points, onPositionC
                     left: `${positionPercent}%`, 
                     width: '18px', 
                     height: '18px', 
-                    backgroundColor: '#ffc107', 
-                    border: '2px solid #ffc107', 
+                    backgroundColor: COLORS.ACTIVE_POINT, 
+                    border: `2px solid ${COLORS.ACTIVE_POINT}`, 
                     borderRadius: '50%', 
                     transform: 'translate(-50%, -50%)', 
                     cursor: 'grab', 
